@@ -23,7 +23,7 @@ spec:
             uptest.upbound.io/timeout: "2400"
         spec:
           forProvider:
-            region: eu-west-3
+            region: eu-west-1
             roleArnRef:
               name: teama-cluster-role
             vpcConfig:
@@ -74,7 +74,7 @@ spec:
         kind: ClusterAuth
         spec:
           forProvider:
-            region: eu-west-3
+            region: eu-west-1
             clusterNameRef:
               name: eks-cluster
           writeConnectionSecretToRef:
@@ -156,7 +156,7 @@ spec:
         spec:
           forProvider:
             enableDnsHostnames: true
-            region: eu-west-3
+            region: eu-west-1
             cidrBlock: 10.0.0.0/16
       patches:
         - fromFieldPath: spec.name
@@ -173,9 +173,9 @@ spec:
         kind: Subnet
         spec:
           forProvider:
-            region: eu-west-3
+            region: eu-west-1
             mapPublicIpOnLaunch: true
-            availabilityZone: eu-west-3a
+            availabilityZone: eu-west-1a
             vpcIdRef:
               name: sample-vpc
             cidrBlock: 10.0.1.0/24
@@ -198,9 +198,9 @@ spec:
         kind: Subnet
         spec:
           forProvider:
-            region: eu-west-3
+            region: eu-west-1
             mapPublicIpOnLaunch: true
-            availabilityZone: eu-west-3b
+            availabilityZone: eu-west-1b
             vpcIdRef:
               name: sample-vpc
             cidrBlock: 10.0.2.0/24
@@ -223,9 +223,9 @@ spec:
         kind: Subnet
         spec:
           forProvider:
-            region: eu-west-3
+            region: eu-west-1
             mapPublicIpOnLaunch: true
-            availabilityZone: eu-west-3c
+            availabilityZone: eu-west-1c
             vpcIdRef:
               name: sample-vpc
             cidrBlock: 10.0.3.0/24
@@ -255,7 +255,7 @@ spec:
               name: sample-eks-cluster
             nodeRoleArnRef:
               name: sample-node-role
-            region: eu-west-3
+            region: eu-west-1
             instanceTypes:
               - m5.large
             scalingConfig:
@@ -416,7 +416,7 @@ spec:
           forProvider:
             tags:
               name: eks-sg
-            region: eu-west-3
+            region: eu-west-1
             vpcIdRef:
               name: sample-vpc
       patches:
@@ -445,7 +445,7 @@ spec:
         spec:
           deletionPolicy: Delete
           forProvider:
-            region: eu-west-3
+            region: eu-west-1
             fromPort: 0
             toPort: 0
             protocol: "-1"
@@ -474,7 +474,7 @@ spec:
         spec:
           deletionPolicy: Delete
           forProvider:
-            region: eu-west-3
+            region: eu-west-1
             fromPort: 0
             toPort: 0
             protocol: "-1"
@@ -505,7 +505,7 @@ spec:
           forProvider:
             tags:
               name: eks-ig
-            region: eu-west-3
+            region: eu-west-1
             vpcIdRef:
               name: sample-vpc
       patches:
@@ -529,7 +529,7 @@ spec:
           forProvider:
             tags:
               name: eks-rt
-            region: eu-west-3
+            region: eu-west-1
             vpcIdRef:
               name: sample-vpc
       patches:
@@ -554,7 +554,7 @@ spec:
             destinationCidrBlock: 0.0.0.0/0
             gatewayIdRef:
               name: routegw
-            region: eu-west-3
+            region: eu-west-1
             routeTableIdRef:
               name: table
       patches:
@@ -582,7 +582,7 @@ spec:
         kind: RouteTableAssociation
         spec:
           forProvider:
-            region: eu-west-3
+            region: eu-west-1
             routeTableIdRef:
               name: rta
             subnetIdRef:
@@ -613,7 +613,7 @@ spec:
         kind: RouteTableAssociation
         spec:
           forProvider:
-            region: eu-west-3
+            region: eu-west-1
             routeTableIdRef:
               name: rta
             subnetIdRef:
@@ -644,7 +644,7 @@ spec:
         kind: RouteTableAssociation
         spec:
           forProvider:
-            region: eu-west-3
+            region: eu-west-1
             routeTableIdRef:
               name: rta
             subnetIdRef:
@@ -674,7 +674,7 @@ spec:
         kind: SubnetGroup
         spec:
           forProvider:
-            region: eu-west-3
+            region: eu-west-1
             subnetIdRefs:
               - name: sample-subnet1
               - name: sample-subnet2
@@ -753,7 +753,7 @@ spec:
               name: dbinstance
               namespace: crossplane-system
             publiclyAccessible: true
-            region: eu-west-3
+            region: eu-west-1
             skipFinalSnapshot: true
             username: adminuser
             dbSubnetGroupNameRef:

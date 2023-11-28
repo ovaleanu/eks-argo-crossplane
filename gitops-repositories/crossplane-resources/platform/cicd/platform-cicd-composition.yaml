@@ -15,7 +15,7 @@ spec:
         kind: Repository
         spec:
           forProvider:
-            region: eu-west-3
+            region: eu-west-1
       patches:
         - fromFieldPath: spec.name
           toFieldPath: metadata.name
