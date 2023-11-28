@@ -1,0 +1,11 @@
+apiVersion: github.upbound.io/v1beta1
+kind: ProviderConfig
+metadata:
+  name: github-provider
+spec:
+  credentials:
+    source: Secret
+    secretRef:
+      key: token
+      name: gh-creds
+      namespace: crossplane-system
