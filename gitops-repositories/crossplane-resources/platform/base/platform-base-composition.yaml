@@ -16,11 +16,11 @@ spec:
   resources:
     - name: eks-cluster
       base:
-        apiVersion: eks.aws.upbound.io/v1beta1
+        apiVersion: eks.aws.crossplane.io/v1beta1
         kind: Cluster
         metadata:
-          annotations:
-            uptest.upbound.io/timeout: "2400"
+          # annotations:
+          # uptest.upbound.io/timeout: "2400"
         spec:
           forProvider:
             region: eu-west-1
@@ -70,7 +70,7 @@ spec:
           matchString: ACTIVE
     - name: eks-clusterAuth
       base:
-        apiVersion: eks.aws.upbound.io/v1beta1
+        apiVersion: eks.aws.crossplane.io/v1beta1
         kind: ClusterAuth
         spec:
           forProvider:
@@ -96,11 +96,10 @@ spec:
               string:
                 fmt: "%s-conn"
 
-
     #### ROLE && ROLE ATTACHMENT
     - name: eks-cluster-role
       base:
-        apiVersion: iam.aws.upbound.io/v1beta1
+        apiVersion: iam.aws.crossplane.io/v1beta1
         kind: Role
         spec:
           forProvider:
@@ -147,11 +146,10 @@ spec:
               string:
                 fmt: "%s-cluster-role"
 
-
     ### VPC
     - name: eks-vpc
       base:
-        apiVersion: ec2.aws.upbound.io/v1beta1
+        apiVersion: ec2.aws.crossplane.io/v1beta1
         kind: VPC
         spec:
           forProvider:
@@ -169,7 +167,7 @@ spec:
     ### PRIVATE SUBNETS
     - name: eks-public-subnet-1
       base:
-        apiVersion: ec2.aws.upbound.io/v1beta1
+        apiVersion: ec2.aws.crossplane.io/v1beta1
         kind: Subnet
         spec:
           forProvider:
@@ -194,7 +192,7 @@ spec:
                 fmt: "%s-vpc"
     - name: eks-public-subnet-2
       base:
-        apiVersion: ec2.aws.upbound.io/v1beta1
+        apiVersion: ec2.aws.crossplane.io/v1beta1
         kind: Subnet
         spec:
           forProvider:
@@ -219,7 +217,7 @@ spec:
                 fmt: "%s-vpc"
     - name: eks-public-subnet-3
       base:
-        apiVersion: ec2.aws.upbound.io/v1beta1
+        apiVersion: ec2.aws.crossplane.io/v1beta1
         kind: Subnet
         spec:
           forProvider:
@@ -243,11 +241,10 @@ spec:
               string:
                 fmt: "%s-vpc"
 
-
     #### NODEGROUP
     - name: eks-nodeGroup
       base:
-        apiVersion: eks.aws.upbound.io/v1beta1
+        apiVersion: eks.aws.crossplane.io/v1beta1
         kind: NodeGroup
         spec:
           forProvider:
@@ -310,7 +307,7 @@ spec:
 
     - name: nodegroup-role
       base:
-        apiVersion: iam.aws.upbound.io/v1beta1
+        apiVersion: iam.aws.crossplane.io/v1beta1
         kind: Role
         spec:
           forProvider:
@@ -337,7 +334,7 @@ spec:
 
     - name: nodegroup-policy-attachment1
       base:
-        apiVersion: iam.aws.upbound.io/v1beta1
+        apiVersion: iam.aws.crossplane.io/v1beta1
         kind: RolePolicyAttachment
         spec:
           forProvider:
@@ -360,7 +357,7 @@ spec:
 
     - name: nodegroup-policy-attachment2
       base:
-        apiVersion: iam.aws.upbound.io/v1beta1
+        apiVersion: iam.aws.crossplane.io/v1beta1
         kind: RolePolicyAttachment
         spec:
           forProvider:
@@ -382,7 +379,7 @@ spec:
                 fmt: "%s-nodegroup-role"
     - name: nodegroup-policy-attachment3
       base:
-        apiVersion: iam.aws.upbound.io/v1beta1
+        apiVersion: iam.aws.crossplane.io/v1beta1
         kind: RolePolicyAttachment
         spec:
           forProvider:
@@ -406,7 +403,7 @@ spec:
     ## SECURITY GROUP
     - name: eks-sg
       base:
-        apiVersion: ec2.aws.upbound.io/v1beta1
+        apiVersion: ec2.aws.crossplane.io/v1beta1
         kind: SecurityGroup
         metadata:
           labels:
@@ -440,7 +437,7 @@ spec:
                 fmt: "%s"
     - name: eks-sg-rule-1
       base:
-        apiVersion: ec2.aws.upbound.io/v1beta1
+        apiVersion: ec2.aws.crossplane.io/v1beta1
         kind: SecurityGroupRule
         spec:
           deletionPolicy: Delete
@@ -469,7 +466,7 @@ spec:
                 fmt: "%s-sg"
     - name: eks-sg-rule-2
       base:
-        apiVersion: ec2.aws.upbound.io/v1beta1
+        apiVersion: ec2.aws.crossplane.io/v1beta1
         kind: SecurityGroupRule
         spec:
           deletionPolicy: Delete
@@ -499,7 +496,7 @@ spec:
 
     - name: eks-internetGateway
       base:
-        apiVersion: ec2.aws.upbound.io/v1beta1
+        apiVersion: ec2.aws.crossplane.io/v1beta1
         kind: InternetGateway
         spec:
           forProvider:
@@ -523,7 +520,7 @@ spec:
                 fmt: "%s-vpc"
     - name: eks-routeTable
       base:
-        apiVersion: ec2.aws.upbound.io/v1beta1
+        apiVersion: ec2.aws.crossplane.io/v1beta1
         kind: RouteTable
         spec:
           forProvider:
@@ -547,7 +544,7 @@ spec:
                 fmt: "%s-vpc"
     - name: eks-route-1
       base:
-        apiVersion: ec2.aws.upbound.io/v1beta1
+        apiVersion: ec2.aws.crossplane.io/v1beta1
         kind: Route
         spec:
           forProvider:
@@ -578,7 +575,7 @@ spec:
                 fmt: "%s-ig"
     - name: eks-routetable-association-1
       base:
-        apiVersion: ec2.aws.upbound.io/v1beta1
+        apiVersion: ec2.aws.crossplane.io/v1beta1
         kind: RouteTableAssociation
         spec:
           forProvider:
@@ -609,7 +606,7 @@ spec:
 
     - name: eks-routetable-association-2
       base:
-        apiVersion: ec2.aws.upbound.io/v1beta1
+        apiVersion: ec2.aws.crossplane.io/v1beta1
         kind: RouteTableAssociation
         spec:
           forProvider:
@@ -640,7 +637,7 @@ spec:
 
     - name: eks-routetable-association-3
       base:
-        apiVersion: ec2.aws.upbound.io/v1beta1
+        apiVersion: ec2.aws.crossplane.io/v1beta1
         kind: RouteTableAssociation
         spec:
           forProvider:
@@ -670,7 +667,7 @@ spec:
                 fmt: "%s-public-subnet-3"
     - name: rds-subnet-group
       base:
-        apiVersion: rds.aws.upbound.io/v1beta1
+        apiVersion: rds.aws.crossplane.io/v1beta1
         kind: SubnetGroup
         spec:
           forProvider:
@@ -681,15 +678,15 @@ spec:
               - name: sample-subnet2
         references:
           - dependsOn:
-              apiVersion: ec2.aws.upbound.io/v1beta1
+              apiVersion: ec2.aws.crossplane.io/v1beta1
               kind: Subnet
               name: bar
           - dependsOn:
-              apiVersion: ec2.aws.upbound.io/v1beta1
+              apiVersion: ec2.aws.crossplane.io/v1beta1
               kind: Subnet
               name: bar
           - dependsOn:
-              apiVersion: ec2.aws.upbound.io/v1beta1
+              apiVersion: ec2.aws.crossplane.io/v1beta1
               kind: Subnet
               name: bar
       patches:
@@ -738,7 +735,7 @@ spec:
 
     - name: rds-instance
       base:
-        apiVersion: rds.aws.upbound.io/v1beta1
+        apiVersion: rds.aws.crossplane.io/v1beta1
         kind: Instance
         spec:
           forProvider:
@@ -758,9 +755,9 @@ spec:
             username: adminuser
             dbSubnetGroupNameRef:
               name: rds-subnet-group
-#            vpcSecurityGroupIdSelector:
-#              matchLabels:
-#                owner: team
+            #            vpcSecurityGroupIdSelector:
+            #              matchLabels:
+            #                owner: team
             vpcSecurityGroupIdRefs:
               - name: sg
           writeConnectionSecretToRef:
@@ -768,11 +765,11 @@ spec:
             namespace: crossplane-system
           references:
             - dependsOn:
-                apiVersion: rds.aws.upbound.io/v1beta1
+                apiVersion: rds.aws.crossplane.io/v1beta1
                 kind: SubnetGroup
                 name: bar
             - dependsOn:
-                apiVersion: ec2.aws.upbound.io/v1beta1
+                apiVersion: ec2.aws.crossplane.io/v1beta1
                 kind: SecurityGroup
                 name: bar
       patches:
@@ -794,12 +791,12 @@ spec:
             - type: string
               string:
                 fmt: "%s-db-instance"
-#        - fromFieldPath: spec.name
-#          toFieldPath: spec.vpcSecurityGroupIdSelector.matchLabels.owner
-#          transforms:
-#            - type: string
-#              string:
-#                fmt: "%s"
+        #        - fromFieldPath: spec.name
+        #          toFieldPath: spec.vpcSecurityGroupIdSelector.matchLabels.owner
+        #          transforms:
+        #            - type: string
+        #              string:
+        #                fmt: "%s"
         - fromFieldPath: spec.name
           toFieldPath: spec.forProvider.vpcSecurityGroupIdRefs[0].name
           transforms:
