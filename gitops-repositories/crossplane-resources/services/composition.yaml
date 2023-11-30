@@ -34,7 +34,7 @@ spec:
                 credentials:
                   source: Secret
                   secretRef:
-                    namespace: default
+                    namespace: teams
                     name: #patched
                     key: kubeconfig
       patches:
