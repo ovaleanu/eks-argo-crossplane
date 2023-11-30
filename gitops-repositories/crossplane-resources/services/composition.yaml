@@ -1,0 +1,46 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: xhosts.xcluster.ovsandbox.com
+  labels:
+    ovsandbox.com/provider: k8s
+    ovsandbox.com/environment: dev
+    crossplane.io/xrd: xhosts.xcluster.ovsandbox.com
+spec:
+  writeConnectionSecretsToNamespace: crossplane-system
+  compositeTypeRef:
+    apiVersion: xcluster.ovsandbox.com/v1alpha1
+    kind: XHost
+  patchSets:
+    - name: common-parameters
+      patches:
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.resourceConfig.providerConfigName
+          toFieldPath: spec.providerConfigRef.name
+
+  resources:
+    - name: cluster-provider
+      base:
+        apiVersion: kubernetes.crossplane.io/v1alpha1
+        kind: Object
+        spec:
+          forProvider:
+            manifest:
+              apiVersion: kubernetes.crossplane.io/v1alpha1
+              kind: ProviderConfig
+              metadata:
+                name: xcluster-kubernetes-provider
+              spec:
+                credentials:
+                  source: Secret
+                  secretRef:
+                    namespace: default
+                    name: #patched
+                    key: kubeconfig
+      patches:
+        - type: PatchSet
+          patchSetName: common-parameters
+        - fromFieldPath: spec.resourceConfig.clusterName
+          toFieldPath: spec.forProvider.manifest.metadata.name
+        - fromFieldPath: spec.parameters.secretName
+          toFieldPath: spec.forProvider.manifest.spec.credentials.secretRef.name

@@ -1,0 +1,40 @@
+apiVersion: xcluster.ovsandbox.com/v1alpha1
+kind: cls
+metadata:
+  name: managed-cluster
+  namespace: teams
+spec:
+  resourceConfig:
+    deletionPolicy: Delete
+    providerConfigName: aws-provider-config
+    k8sproviderConfigName: kubernetes-provider
+    region: eu-west-1
+    accountId: "xx"
+    tags:
+      - key: env
+        value: test
+      - key: anotherKey
+        value: anotherValue
+    objectTags:
+      key: env
+  parameters:
+    #EKS Input parameters
+    version: "1.27"
+    endpointPrivateAccess: false
+    endpointPublicAccess: true
+    subnetIds: # Update your private subnet ids
+      - "subnet-xx"
+      - "subnet-xx"
+      - "subnet-xx"
+    secretName: xplane-ovsandbox-eks-cluster
+  managedNodeGroups:
+    minSize: 1
+    desiredSize: 1
+    maxSize: 2
+    capacityType: SPOT
+    instanceTypes:
+      - m6a.large
+      - m5a.large
+      - m5.large
+  writeConnectionSecretToRef:
+    name: xplane-eks-cluster

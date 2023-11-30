@@ -1,12 +1,9 @@
-# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-# SPDX-License-Identifier: Apache-2.0
-
 apiVersion: apiextensions.crossplane.io/v1
 kind: CompositeResourceDefinition
 metadata:
-  name: xvpcsubnets.network.awsblueprints.io  # must be spec.names.plural+"."+spec.group
+  name: xvpcsubnets.network.ovsandbox.com  # must be spec.names.plural+"."+spec.group
 spec:
-  group: network.awsblueprints.io
+  group: network.ovsandbox.com
   names:
     kind: XVpcSubnet        # cluster scope type
     plural: xvpcsubnets     # lowercase only
@@ -36,7 +33,7 @@ spec:
               type: object
               properties:
                 networkId:
-                  description: ID of this network which other objects can use to reference it. VPC and subnets are labelled with this ID in label 'network.awsblueprints.io/network-id'
+                  description: ID of this network which other objects can use to reference it. VPC and subnets are labelled with this ID in label 'network.ovsandbox.com/network-id'
                   type: string
                   default: ""
                 parameters:

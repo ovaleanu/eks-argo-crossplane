@@ -1,20 +1,17 @@
-# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-# SPDX-License-Identifier: Apache-2.0
-
 apiVersion: apiextensions.crossplane.io/v1
 kind: Composition
 metadata:
-  name: xvpcsubnets-networkid.network.awsblueprints.io
+  name: xvpcsubnets.network.ovsandbox.com
   labels:
-    awsblueprints.io/provider: aws
-    awsblueprints.io/environment: dev
-    awsblueprints.io/network-id: "true"
-    crossplane.io/xrd: xvpcsubnets.network.awsblueprints.io
+    ovsandbox.com/provider: aws
+    ovsandbox.com/environment: dev
+    ovsandbox.com/network-id: "false"
+    crossplane.io/xrd: xvpcsubnets.network.ovsandbox.com
     service: vpcsubnet
 spec:
   writeConnectionSecretsToNamespace: crossplane-system
   compositeTypeRef:
-    apiVersion: network.awsblueprints.io/v1alpha1
+    apiVersion: network.ovsandbox.com/v1alpha1
     kind: XVpcSubnet
 
   patchSets:
@@ -29,18 +26,15 @@ spec:
         - type: FromCompositeFieldPath
           fromFieldPath: spec.resourceConfig.region
           toFieldPath: spec.forProvider.region
-#        - type: FromCompositeFieldPath
-#          fromFieldPath: spec.resourceConfig.name
-#          toFieldPath: metadata.annotations[crossplane.io/external-name]
-        - type: FromCompositeFieldPath
-          fromFieldPath: spec.networkId
-          toFieldPath: metadata.labels[network.awsblueprints.io/network-id]
 
   resources:
     - name: vpc
       base:
         apiVersion: ec2.aws.crossplane.io/v1beta1
         kind: VPC
+        metadata:
+          labels:
+            type: xcluster-vpc
         spec:
           forProvider:
             amazonProvidedIpv6CidrBlock:
@@ -86,7 +80,7 @@ spec:
         kind: Subnet
         metadata:
           labels:
-            type: subnet
+            type: ovsandbox-subnet
             visibility: public
         spec:
           forProvider:
@@ -120,6 +114,49 @@ spec:
           toFieldPath: spec.forProvider.availabilityZone
         - fromFieldPath: spec.parameters.publicSubnet1-availabilityZone
           toFieldPath: metadata.labels.zone
+  # Security Group
+    - name: additionalEKSSecurityGroup
+      base:
+        apiVersion: ec2.aws.crossplane.io/v1beta1
+        kind: SecurityGroup
+        metadata:
+          labels:
+            type: xcluster-security-group
+        spec:
+          forProvider:
+            vpcIdSelector:
+              matchControllerRef: false
+              matchLabels:
+                type: xcluster-vpc
+            groupName: additional-eks-security-group
+            description: Allow access to vcluster nodegroups
+            ingress:
+              - fromPort: -1
+                ipProtocol: "-1"
+                ipRanges:
+                  - cidrIp: 0.0.0.0/0
+                toPort: -1
+              - fromPort: -1
+                ipProtocol: "-1"
+                ipRanges:
+                  - cidrIp: 10.20.0.0/17
+                    description: "Allow VPC Network"
+                toPort: -1
+              - fromPort: 443
+                ipProtocol: "tcp"
+                ipRanges:
+                  - cidrIp: 0.0.0.0/0
+                    description: "Allow pods to communicate with the cluster API Server"
+                toPort: 443
+            egress:
+              - fromPort: -1
+                ipProtocol: "-1"
+                ipRanges:
+                  - cidrIp: 0.0.0.0/0
+                toPort: -1
+      patches:
+        - type: PatchSet
+          patchSetName: common-parameters
 # PUBLIC SUBNET2
     - name: public-subnet2
       base:
@@ -127,7 +164,7 @@ spec:
         kind: Subnet
         metadata:
           labels:
-            type: subnet
+            type: ovsandbox-subnet
             visibility: public
         spec:
           forProvider:
@@ -168,7 +205,7 @@ spec:
         kind: Subnet
         metadata:
           labels:
-            type: subnet
+            type: ovsandbox-subnet
             visibility: public
         spec:
           forProvider:
@@ -209,7 +246,7 @@ spec:
         kind: Subnet
         metadata:
           labels:
-            type: subnet
+            type: ovsandbox-subnet
             visibility: private
         spec:
           forProvider:
@@ -250,7 +287,7 @@ spec:
         kind: Subnet
         metadata:
           labels:
-            type: subnet
+            type: ovsandbox-subnet
             visibility: private
         spec:
           forProvider:
@@ -291,7 +328,7 @@ spec:
         kind: Subnet
         metadata:
           labels:
-            type: subnet
+            type: ovsandbox-subnet
             visibility: private
         spec:
           forProvider:
@@ -332,7 +369,7 @@ spec:
         kind: InternetGateway
         metadata:
           labels:
-            type: igw
+            type: internetgateway
         spec:
           forProvider:
             vpcIdSelector:
@@ -358,18 +395,16 @@ spec:
         kind: NATGateway
         metadata:
           labels:
-            type: natgw
+            type: natgateway
         spec:
           forProvider:
             allocationIdSelector:
-              matchControllerRef: true
               matchLabels:
-                type: eip
+                type: elasticip
             connectivityType:
             subnetIdSelector:
-              matchControllerRef: true
               matchLabels:
-                type: subnet
+                type: ovsandbox-subnet
                 visibility: public
             tags:
               - key: Name
@@ -396,7 +431,7 @@ spec:
         kind: Address
         metadata:
           labels:
-            type: eip
+            type: elasticip
         spec:
           forProvider:
             domain: vpc
@@ -426,26 +461,25 @@ spec:
             routes:
               - destinationCidrBlock: 0.0.0.0/0
                 gatewayIdSelector:
-                  matchControllerRef: true
                   matchLabels:
-                    type: igw
+                    type: internetgateway
             associations:
               - subnetIdSelector:
                   matchControllerRef: true
                   matchLabels:
-                    type: subnet
+                    type: ovsandbox-subnet
                     visibility: public
                     zone:
               - subnetIdSelector:
                   matchControllerRef: true
                   matchLabels:
-                    type: subnet
+                    type: ovsandbox-subnet
                     visibility: public
                     zone:
               - subnetIdSelector:
                   matchControllerRef: true
                   matchLabels:
-                    type: subnet
+                    type: ovsandbox-subnet
                     visibility: public
                     zone:
             tags:
@@ -480,26 +514,25 @@ spec:
             routes:
               - destinationCidrBlock: 0.0.0.0/0
                 natGatewayIdSelector:
-                  matchControllerRef: true
                   matchLabels:
-                    type: natgw
+                    type: natgateway
             associations:
               - subnetIdSelector:
                   matchControllerRef: true
                   matchLabels:
-                    type: subnet
+                    type: ovsandbox-subnet
                     visibility: private
                     zone:
               - subnetIdSelector:
                   matchControllerRef: true
                   matchLabels:
-                    type: subnet
+                    type: ovsandbox-subnet
                     visibility: private
                     zone:
               - subnetIdSelector:
                   matchControllerRef: true
                   matchLabels:
-                    type: subnet
+                    type: ovsandbox-subnet
                     visibility: private
                     zone:
             tags:

@@ -1,0 +1,49 @@
+# This example resource creates the following resources
+#     1. VPC
+#     2. Public Subnet
+#     3. Private Subnet
+#     4. Internet Gateway
+#     5. NAT Gateway
+#     6. EIP for NAT gateway
+#     7. Public Route Table for IGW
+#     8. Private Route Table for NAT GW
+
+---
+apiVersion: network.ovsandbox.com/v1alpha1
+kind: vpcSubnet
+metadata:
+  name: xplane-ovsandbox-vpc-subnets
+  namespace: teams
+spec:
+  compositionSelector:
+    matchLabels:
+      ovsandbox.com/provider: aws
+      ovsandbox.com/environment: dev
+      ovsandbox.com/network-id: "false"
+      service: vpcsubnet
+  resourceConfig:
+    providerConfigName: aws-provider-config
+    region: eu-west-1
+  parameters:
+    #vpc input
+    vpc-Name: xplane-ovsandbox-vpc
+    vpc-cidrBlock: "10.21.0.0/17" # 32768 IPs
+    vpc-amazonProvidedIpv6CidrBlock: false
+    #public subnet1
+    publicSubnet1-cidrBlock: "10.21.0.0/21" # 2048 IPs
+    publicSubnet1-availabilityZone: eu-west-1a
+    #public subnet2
+    publicSubnet2-cidrBlock: "10.21.8.0/21" # 2048 IPs
+    publicSubnet2-availabilityZone: eu-west-1b
+    #public subnet3
+    publicSubnet3-cidrBlock: "10.21.16.0/21" # 2048 IPs
+    publicSubnet3-availabilityZone: eu-west-1c
+    #private subnet1
+    privateSubnet1-cidrBlock: "10.21.64.0/21" # 2048 IPs
+    privateSubnet1-availabilityZone: eu-west-1a
+    #private subnet2
+    privateSubnet2-cidrBlock: "10.21.72.0/21" # 2048 IPs
+    privateSubnet2-availabilityZone: eu-west-1b
+    #private subnet3
+    privateSubnet3-cidrBlock: "10.21.80.0/21" # 2048 IPs
+    privateSubnet3-availabilityZone: eu-west-1c

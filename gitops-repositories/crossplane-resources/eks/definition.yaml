@@ -1,29 +1,31 @@
-# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-# SPDX-License-Identifier: Apache-2.0
-
 apiVersion: apiextensions.crossplane.io/v1
 kind: CompositeResourceDefinition
 metadata:
-  name: xamazonekss.cluster.awsblueprints.io  # must be spec.names.plural+"."+spec.group
+  name: xamazonekss.cluster.ovsandbox.com # must be spec.names.plural+"."+spec.group
 spec:
   connectionSecretKeys:
     - kubeconfig
     - cluster-ca
     - apiserver-endpoint
-  group: cluster.awsblueprints.io
+  group: cluster.ovsandbox.com
   names:
-    kind: XAmazonEks        # cluster scope type
+    kind: XAmazonEks # cluster scope type
     plural: xamazonekss
-  claimNames:               # namespace scope type
+  claimNames: # namespace scope type
     kind: amazonEks
-    plural: amazonekss      # lowercase only
-
+    plural: amazonekss # lowercase only
   versions:
     - name: v1alpha1
       additionalPrinterColumns:
-      - jsonPath: .status.clusterName
-        name: CLUSTER-NAME
-        type: string
+        - jsonPath: .status.conditions[?(@.type=='Ready')].status
+          name: READY
+          type: string
+        - jsonPath: .status.conditions[?(@.type=='Synced')].status
+          name: SYNCED
+          type: string
+        - jsonPath: .metadata.creationTimestamp
+          name: AGE
+          type: date
       served: true
       referenceable: true
       schema:
@@ -56,20 +58,15 @@ spec:
                       type: array
                       default: []
                     networkId:
-                      description: Name of network to use for label-based subnet lookup (subnet label 'network.awsblueprints.io/network-id'). Unused in compositions that use explicit subnet Id through the 'subnetIds' parameter
+                      description: Name of network to use for label-based subnet lookup (subnet label 'network.ovsandbox.com/network-id'). Unused in compositions that use explicit subnet Id through the 'subnetIds' parameter
                       type: string
                       default: ""
-                    adminRole:
-                      description: Name of the role in the same account to give administrator access to this cluster.
-                      type: string
-                      default: Admin
                   required:
                     - version
                 managedNodeGroups:
                   description: Managed Node Groups properties
                   type: object
                   properties:
-
                     minSize:
                       type: integer
                       description: Nodegroup Min Size.
@@ -103,14 +100,16 @@ spec:
                         type: string
                       type: array
                       description: Instance Type.
+                      default:
+                        - m6a.large
                   required:
                     - minSize
                 resourceConfig:
-                  description: ResourceConfig defines general properties of this AWS
+                  description:
+                    ResourceConfig defines general properties of this AWS
                     resource.
                   type: object
                   properties:
-
                     deletionPolicy:
                       description: Defaults to Delete
                       enum:
@@ -118,14 +117,32 @@ spec:
                         - Orphan
                       type: string
                       name:
-                        description: Set the name of this resource in AWS to the value
+                        description:
+                          Set the name of this resource in AWS to the value
                           provided by this field.
                         type: string
                     providerConfigName:
                       type: string
                     region:
                       type: string
-
+                    accountId:
+                      type: string
+                    tags:
+                      items:
+                        properties:
+                          key:
+                            type: string
+                          value:
+                            type: string
+                        required:
+                          - key
+                          - value
+                        type: object
+                      type: array
+                    objectTags:
+                      additionalProperties:
+                        type: string
+                      type: object
                   required:
                     - providerConfigName
                     - region
@@ -134,20 +151,9 @@ spec:
                 - resourceConfig
                 - managedNodeGroups
             status:
+              type: object
               properties:
-                oidcIssuerUrl:
-                  type: string
-                oidcEKS:
-                  type: string
-                accountID:
-                  type: string
-                nodeGroupArn:
-                  type: string
                 clusterName:
                   type: string
-                roleArnCAS:
-                  type: string
-                roleArnCSI:
-                  type: string
-          required:
-            - spec
+          # required:
+          #   - spec
