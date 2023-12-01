@@ -259,6 +259,7 @@ spec:
           policy:
             fromFieldPath: Required
           toFieldPath: spec.forProvider.url
+          type: FromCompositeFieldPath
         - fromFieldPath: "metadata.labels[crossplane.io/claim-name]"
           toFieldPath: metadata.name
           transforms:
@@ -707,6 +708,7 @@ spec:
           policy:
             fromFieldPath: Required
           toFieldPath: spec.providerConfigRef.name
+          type: FromCompositeFieldPath
         - combine:
             strategy: string
             string:
@@ -847,6 +849,11 @@ spec:
               - fromFieldPath: "metadata.labels[crossplane.io/claim-name]"
           toFieldPath: spec.forProvider.name
           type: CombineFromComposite
+      readinessChecks:
+        - matchCondition:
+            status: "True"
+            type: Ready
+          type: MatchCondition
     - base:
         apiVersion: iam.aws.crossplane.io/v1beta1
         kind: RolePolicyAttachment
