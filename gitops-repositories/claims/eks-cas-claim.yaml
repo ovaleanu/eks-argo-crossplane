@@ -13,7 +13,7 @@
 #     8. Installs Cluster Auto Scaler with proper roles.
 #----------------------------------------------------------------------------------
 ---
-apiVersion: cluster.awsblueprints.io/v1alpha1
+apiVersion: cluster.ovsandbox.com/v1alpha1
 kind: amazonEks
 metadata:
   name: xplane-ovsandbox-eks
