@@ -704,6 +704,7 @@ spec:
                 fmt: eks-aws-auth-%s
                 type: Format
               type: string
+          type: FromCompositeFieldPath
         - fromFieldPath: "metadata.labels[crossplane.io/claim-name]"
           policy:
             fromFieldPath: Required
