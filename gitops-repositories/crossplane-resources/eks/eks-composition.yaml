@@ -49,9 +49,7 @@ spec:
                 matchControllerRef: false
                 matchLabels:
                   type: xcluster-security-group
-              subnetIdSelector:
-                matchLabels:
-                  network.ovsandbox.com/network-id:
+              subnetIds:
             roleArnSelector:
               matchControllerRef: true
               matchLabels:
@@ -76,9 +74,8 @@ spec:
         - fromFieldPath: spec.parameters.version
           toFieldPath: spec.forProvider.version
           type: FromCompositeFieldPath
-        - fromFieldPath: spec.parameters.networkId
-          toFieldPath: >-
-            spec.forProvider.resourcesVpcConfig.subnetIdSelector.matchLabels[network.ovsandbox.com/network-id]
+        - fromFieldPath: spec.parameters.subnetIds
+          toFieldPath: spec.forProvider.resourcesVpcConfig.subnetIds
           type: FromCompositeFieldPath
         - fromFieldPath: spec.parameters.endpointPrivateAccess
           toFieldPath: spec.forProvider.resourcesVpcConfig.endpointPrivateAccess
@@ -297,10 +294,6 @@ spec:
               desiredSize:
               maxSize:
               minSize:
-            subnetSelector:
-              matchLabels:
-                network.ovsandbox.com/network-id:
-                visibility: private
       name: eks-managed-nodegroups
       patches:
         - patchSetName: common-parameters
@@ -326,9 +319,8 @@ spec:
         - fromFieldPath: spec.managedNodeGroups.amiType
           toFieldPath: spec.forProvider.amiType
           type: FromCompositeFieldPath
-        - fromFieldPath: spec.parameters.networkId
-          toFieldPath: >-
-            spec.forProvider.subnetSelector.matchLabels[network.ovsandbox.com/network-id]
+        - fromFieldPath: spec.parameters.subnetIds
+          toFieldPath: spec.forProvider.subnets
           type: FromCompositeFieldPath
       readinessChecks:
         - matchCondition:

@@ -23,7 +23,7 @@ spec:
     matchLabels:
       ovsandbox.com/provider: aws
       ovsandbox.com/environment: dev
-      ovsandbox.com/subnet-selection: label
+      ovsandbox.com/subnet-selection: id
       service: eks
   resourceConfig:
     providerConfigName: aws-provider-config
@@ -34,6 +34,10 @@ spec:
     version: "1.27"
     endpointPrivateAccess: false
     endpointPublicAccess: true
+    subnetIds: # Update your subnet ids
+      - "subnet-0c910d7226118dcc4"
+      - "subnet-017a7a96b41b00a7a"
+      - "subnet-06d6894dc7a1c50c8"
   managedNodeGroups:
     minSize: 1
     desiredSize: 2
