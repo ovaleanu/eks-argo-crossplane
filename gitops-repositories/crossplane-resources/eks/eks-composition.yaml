@@ -6,7 +6,7 @@ metadata:
     crossplane.io/xrd: xamazonekss.cluster.ovsandbox.com
     ovsandbox.com/environment: dev
     ovsandbox.com/provider: aws
-    ovsandbox.com/subnet-selection: label
+    ovsandbox.com/subnet-selection: id
     service: eks
 spec:
   compositeTypeRef:
