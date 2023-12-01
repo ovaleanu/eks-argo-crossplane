@@ -21,9 +21,9 @@ metadata:
 spec:
   compositionSelector:
     matchLabels:
-      awsblueprints.io/provider: aws
-      awsblueprints.io/environment: dev
-      awsblueprints.io/subnet-selection: label
+      ovsandbox.com/provider: aws
+      ovsandbox.com/environment: dev
+      ovsandbox.com/subnet-selection: label
       service: eks
   resourceConfig:
     providerConfigName: aws-provider-config
