@@ -655,7 +655,10 @@ spec:
           toFieldPath: metadata.name
           type: FromCompositeFieldPath
       readinessChecks:
-        - type: None
+        - matchCondition:
+            status: "True"
+            type: Ready
+          type: MatchCondition
 
     - name: eks-helm-provider-config
       base:
@@ -685,7 +688,10 @@ spec:
           toFieldPath: metadata.name
           type: FromCompositeFieldPath
       readinessChecks:
-        - type: None
+        - matchCondition:
+            status: "True"
+            type: Ready
+          type: MatchCondition
 
     - name: aws-auth-configmap
       base:
@@ -739,7 +745,10 @@ spec:
           toFieldPath: spec.forProvider.manifest.data.mapRoles
           type: CombineFromComposite
       readinessChecks:
-        - type: None
+        - matchCondition:
+            status: "True"
+            type: Ready
+          type: MatchCondition
 
     - name: cas-policy
       base:
