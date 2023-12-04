@@ -64,7 +64,6 @@ spec:
                 fmt: "arn:aws:s3:::%s"
                 type: Format
               type: string
-        - type: ToCompositeFieldPath
       readinessChecks:
         - matchCondition:
             status: "True"
