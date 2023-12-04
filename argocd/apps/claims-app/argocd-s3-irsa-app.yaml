@@ -11,7 +11,7 @@ spec:
   source:
     repoURL: https://github.com/ovaleanu/eks-argo-crossplane.git
     targetRevision: HEAD
-    path: gitops-repositories/claims
+    path: gitops-repositories/claims/helm-chart/
     directory:
       recurse: true
     helm:
