@@ -80,7 +80,7 @@ spec:
         kind: Subnet
         metadata:
           labels:
-            type: ovsandbox-subnet
+            type: subnet
             visibility: public
         spec:
           forProvider:
@@ -177,7 +177,7 @@ spec:
         kind: Subnet
         metadata:
           labels:
-            type: ovsandbox-subnet
+            type: subnet
             visibility: public
         spec:
           forProvider:
@@ -227,7 +227,7 @@ spec:
         kind: Subnet
         metadata:
           labels:
-            type: ovsandbox-subnet
+            type: subnet
             visibility: public
         spec:
           forProvider:
@@ -277,7 +277,7 @@ spec:
         kind: Subnet
         metadata:
           labels:
-            type: ovsandbox-subnet
+            type: subnet
             visibility: private
         spec:
           forProvider:
@@ -327,7 +327,7 @@ spec:
         kind: Subnet
         metadata:
           labels:
-            type: ovsandbox-subnet
+            type: subnet
             visibility: private
         spec:
           forProvider:
@@ -377,7 +377,7 @@ spec:
         kind: Subnet
         metadata:
           labels:
-            type: ovsandbox-subnet
+            type: subnet
             visibility: private
         spec:
           forProvider:
@@ -467,7 +467,7 @@ spec:
             connectivityType:
             subnetIdSelector:
               matchLabels:
-                type: ovsandbox-subnet
+                type: subnet
                 visibility: public
             tags:
               - key: Name
@@ -535,19 +535,19 @@ spec:
               - subnetIdSelector:
                   matchControllerRef: true
                   matchLabels:
-                    type: ovsandbox-subnet
+                    type: subnet
                     visibility: public
                     zone:
               - subnetIdSelector:
                   matchControllerRef: true
                   matchLabels:
-                    type: ovsandbox-subnet
+                    type: subnet
                     visibility: public
                     zone:
               - subnetIdSelector:
                   matchControllerRef: true
                   matchLabels:
-                    type: ovsandbox-subnet
+                    type: subnet
                     visibility: public
                     zone:
             routes:
@@ -596,19 +596,19 @@ spec:
               - subnetIdSelector:
                   matchControllerRef: true
                   matchLabels:
-                    type: ovsandbox-subnet
+                    type: subnet
                     visibility: private
                     zone:
               - subnetIdSelector:
                   matchControllerRef: true
                   matchLabels:
-                    type: ovsandbox-subnet
+                    type: subnet
                     visibility: private
                     zone:
               - subnetIdSelector:
                   matchControllerRef: true
                   matchLabels:
-                    type: ovsandbox-subnet
+                    type: subnet
                     visibility: private
                     zone:
             routes:

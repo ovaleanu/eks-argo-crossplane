@@ -34,7 +34,8 @@ spec:
           toFieldPath: spec.deletionPolicy
           type: FromCompositeFieldPath
   resources:
-    - base:
+    - name: eks-cluster
+      base:
         apiVersion: eks.aws.crossplane.io/v1beta1
         kind: Cluster
         metadata:
@@ -64,7 +65,6 @@ spec:
           name: apiserver-endpoint
         - fromConnectionSecretKey: kubeconfig
           name: kubeconfig
-      name: eks-cluster
       patches:
         - patchSetName: common-parameters
           type: PatchSet
@@ -116,7 +116,9 @@ spec:
             status: "True"
             type: Ready
           type: MatchCondition
-    - base:
+
+    - name: eks-cluster-role
+      base:
         apiVersion: iam.aws.crossplane.io/v1beta1
         kind: Role
         metadata:
@@ -141,7 +143,6 @@ spec:
                     }
                 ]
               }
-      name: eks-cluster-role
       patches:
         - patchSetName: common-parameters
           type: PatchSet
@@ -158,7 +159,9 @@ spec:
             status: "True"
             type: Ready
           type: MatchCondition
-    - base:
+
+    - name: eks-cluster-policy
+      base:
         apiVersion: iam.aws.crossplane.io/v1beta1
         kind: RolePolicyAttachment
         spec:
@@ -168,7 +171,6 @@ spec:
               matchControllerRef: true
               matchLabels:
                 role: controlplane
-      name: eks-cluster-policy
       patches:
         - patchSetName: common-parameters
           type: PatchSet
@@ -185,7 +187,9 @@ spec:
             status: "True"
             type: Ready
           type: MatchCondition
-    - base:
+
+    - name: eks-service-policy
+      base:
         apiVersion: iam.aws.crossplane.io/v1beta1
         kind: RolePolicyAttachment
         spec:
@@ -195,7 +199,6 @@ spec:
               matchControllerRef: true
               matchLabels:
                 role: controlplane
-      name: eks-service-policy
       patches:
         - patchSetName: common-parameters
           type: PatchSet
@@ -212,7 +215,9 @@ spec:
             status: "True"
             type: Ready
           type: MatchCondition
-    - base:
+
+    - name: eks-vpcresource-controller-policy
+      base:
         apiVersion: iam.aws.crossplane.io/v1beta1
         kind: RolePolicyAttachment
         spec:
@@ -222,7 +227,6 @@ spec:
               matchControllerRef: true
               matchLabels:
                 role: controlplane
-      name: eks-vpcresource-controller-policy
       patches:
         - patchSetName: common-parameters
           type: PatchSet
@@ -239,7 +243,9 @@ spec:
             status: "True"
             type: Ready
           type: MatchCondition
-    - base:
+
+    - name: eks-oidc
+      base:
         apiVersion: iam.aws.crossplane.io/v1beta1
         kind: OpenIDConnectProvider
         spec:
@@ -248,7 +254,6 @@ spec:
               - sts.amazonaws.com
             thumbprintList:
               - 9e99a48a9960b14926bb7f3b02e22da2b0ab7280
-      name: eks-oidc
       patches:
         - patchSetName: common-parameters
           type: PatchSet
@@ -270,7 +275,9 @@ spec:
             status: "True"
             type: Ready
           type: MatchCondition
-    - base:
+
+    - name: eks-managed-nodegroups
+      base:
         apiVersion: eks.aws.crossplane.io/v1alpha1
         kind: NodeGroup
         spec:
@@ -294,7 +301,6 @@ spec:
               desiredSize:
               maxSize:
               minSize:
-      name: eks-managed-nodegroups
       patches:
         - patchSetName: common-parameters
           type: PatchSet
@@ -327,7 +333,9 @@ spec:
             status: "True"
             type: Ready
           type: MatchCondition
-    - base:
+
+    - name: eks-managed-nodegroup-iam-role
+      base:
         apiVersion: iam.aws.crossplane.io/v1beta1
         kind: Role
         metadata:
@@ -352,7 +360,6 @@ spec:
                     }
                 ]
               }
-      name: eks-managed-nodegroup-iam-role
       patches:
         - patchSetName: common-parameters
           type: PatchSet
@@ -382,7 +389,9 @@ spec:
             status: "True"
             type: Ready
           type: MatchCondition
-    - base:
+
+    - name: eks-managed-nodegroup-worker-node-policy
+      base:
         apiVersion: iam.aws.crossplane.io/v1beta1
         kind: RolePolicyAttachment
         spec:
@@ -392,7 +401,6 @@ spec:
               matchControllerRef: true
               matchLabels:
                 role: managed-nodegroup
-      name: eks-managed-nodegroup-worker-node-policy
       patches:
         - patchSetName: common-parameters
           type: PatchSet
@@ -409,7 +417,9 @@ spec:
             status: "True"
             type: Ready
           type: MatchCondition
-    - base:
+
+    - name: eks-managed-nodegroup-container-registry-policy
+      base:
         apiVersion: iam.aws.crossplane.io/v1beta1
         kind: RolePolicyAttachment
         spec:
@@ -419,7 +429,6 @@ spec:
               matchControllerRef: true
               matchLabels:
                 role: managed-nodegroup
-      name: eks-managed-nodegroup-container-registry-policy
       patches:
         - patchSetName: common-parameters
           type: PatchSet
@@ -436,7 +445,9 @@ spec:
             status: "True"
             type: Ready
           type: MatchCondition
-    - base:
+
+    - name: eks-managed-nodegroup-ssm-policy
+      base:
         apiVersion: iam.aws.crossplane.io/v1beta1
         kind: RolePolicyAttachment
         spec:
@@ -446,7 +457,6 @@ spec:
               matchControllerRef: true
               matchLabels:
                 role: managed-nodegroup
-      name: eks-managed-nodegroup-ssm-policy
       patches:
         - patchSetName: common-parameters
           type: PatchSet
@@ -463,7 +473,9 @@ spec:
             status: "True"
             type: Ready
           type: MatchCondition
-    - base:
+
+    - name: eks-managed-nodegroup-cni-policy
+      base:
         apiVersion: iam.aws.crossplane.io/v1beta1
         kind: RolePolicyAttachment
         spec:
@@ -473,7 +485,6 @@ spec:
               matchControllerRef: true
               matchLabels:
                 role: managed-nodegroup
-      name: eks-managed-nodegroup-cni-policy
       patches:
         - patchSetName: common-parameters
           type: PatchSet
@@ -490,7 +501,9 @@ spec:
             status: "True"
             type: Ready
           type: MatchCondition
-    - base:
+
+    - name: csi-role
+      base:
         apiVersion: iam.aws.crossplane.io/v1beta1
         kind: Role
         metadata:
@@ -499,7 +512,6 @@ spec:
         spec:
           forProvider:
             name: ""
-      name: csi-role
       patches:
         - patchSetName: common-parameters
           type: PatchSet
@@ -548,7 +560,9 @@ spec:
             status: "True"
             type: Ready
           type: MatchCondition
-    - base:
+
+    - name: csi-policy-attachment
+      base:
         apiVersion: iam.aws.crossplane.io/v1beta1
         kind: RolePolicyAttachment
         spec:
@@ -558,7 +572,6 @@ spec:
               matchControllerRef: true
               matchLabels:
                 role: csi-role
-      name: csi-policy-attachment
       patches:
         - patchSetName: common-parameters
           type: PatchSet
@@ -575,7 +588,9 @@ spec:
             status: "True"
             type: Ready
           type: MatchCondition
-    - base:
+
+    - name: eks-csi-driver
+      base:
         apiVersion: eks.aws.crossplane.io/v1alpha1
         kind: Addon
         metadata: {}
@@ -588,7 +603,6 @@ spec:
               matchLabels:
                 role: controlplane
             resolveConflicts: OVERWRITE
-      name: eks-csi-driver
       patches:
         - patchSetName: common-parameters
           type: PatchSet
@@ -610,7 +624,9 @@ spec:
             status: "True"
             type: Ready
           type: MatchCondition
-    - base:
+
+    - name: eks-k8s-provider-config
+      base:
         apiVersion: kubernetes.crossplane.io/v1alpha1
         kind: ProviderConfig
         metadata:
@@ -622,7 +638,6 @@ spec:
               name: ""
               namespace: crossplane-system
             source: Secret
-      name: eks-k8s-provider-config
       patches:
         - fromFieldPath: metadata.uid
           policy:
@@ -641,7 +656,9 @@ spec:
           type: FromCompositeFieldPath
       readinessChecks:
         - type: None
-    - base:
+
+    - name: eks-helm-provider-config
+      base:
         apiVersion: helm.crossplane.io/v1beta1
         kind: ProviderConfig
         metadata:
@@ -653,7 +670,6 @@ spec:
               name: ""
               namespace: crossplane-system
             source: Secret
-      name: eks-helm-provider-config
       patches:
         - fromFieldPath: metadata.uid
           toFieldPath: spec.credentials.secretRef.name
@@ -670,7 +686,9 @@ spec:
           type: FromCompositeFieldPath
       readinessChecks:
         - type: None
-    - base:
+
+    - name: aws-auth-configmap
+      base:
         apiVersion: kubernetes.crossplane.io/v1alpha1
         kind: Object
         spec:
@@ -685,7 +703,6 @@ spec:
           managementPolicy: ObserveCreateUpdate
           providerConfigRef:
             name: invalid
-      name: aws-auth-configmap
       patches:
         - fromFieldPath: "metadata.labels[crossplane.io/claim-name]"
           policy:
@@ -723,7 +740,9 @@ spec:
           type: CombineFromComposite
       readinessChecks:
         - type: None
-    - base:
+
+    - name: cas-policy
+      base:
         apiVersion: iam.aws.crossplane.io/v1beta1
         kind: Policy
         metadata:
@@ -732,7 +751,6 @@ spec:
         spec:
           forProvider:
             name: ""
-      name: cas-policy
       patches:
         - patchSetName: common-parameters
           type: PatchSet
@@ -789,7 +807,9 @@ spec:
             status: "True"
             type: Ready
           type: MatchCondition
-    - base:
+
+    - name: cas-cluster-as-role
+      base:
         apiVersion: iam.aws.crossplane.io/v1beta1
         kind: Role
         metadata:
@@ -798,7 +818,6 @@ spec:
         spec:
           forProvider:
             name: ""
-      name: cas-cluster-as-role
       patches:
         - patchSetName: common-parameters
           type: PatchSet
@@ -847,7 +866,9 @@ spec:
             status: "True"
             type: Ready
           type: MatchCondition
-    - base:
+
+    - name: cas-role-policy-attachment
+      base:
         apiVersion: iam.aws.crossplane.io/v1beta1
         kind: RolePolicyAttachment
         spec:
@@ -860,7 +881,6 @@ spec:
               matchControllerRef: true
               matchLabels:
                 role: cas-role
-      name: cas-role-policy-attachment
       patches:
         - patchSetName: common-parameters
           type: PatchSet
@@ -869,7 +889,9 @@ spec:
             status: "True"
             type: Ready
           type: MatchCondition
-    - base:
+
+    - name: cas-sa
+      base:
         apiVersion: kubernetes.crossplane.io/v1alpha1
         kind: Object
         spec:
@@ -884,7 +906,6 @@ spec:
                   k8s-app: cluster-autoscaler
                 name: cluster-autoscaler
                 namespace: kube-system
-      name: cas-sa
       patches:
         - patchSetName: k8s-config
           type: PatchSet
@@ -909,7 +930,9 @@ spec:
             status: "True"
             type: Ready
           type: MatchCondition
-    - base:
+
+    - name: cas-cluster-role
+      base:
         apiVersion: kubernetes.crossplane.io/v1alpha1
         kind: Object
         spec:
@@ -1036,7 +1059,6 @@ spec:
                   verbs:
                     - get
                     - update
-      name: cas-cluster-role
       patches:
         - patchSetName: k8s-config
           type: PatchSet
@@ -1055,7 +1077,9 @@ spec:
             status: "True"
             type: Ready
           type: MatchCondition
-    - base:
+
+    - name: cas-role
+      base:
         apiVersion: kubernetes.crossplane.io/v1alpha1
         kind: Object
         spec:
@@ -1090,7 +1114,6 @@ spec:
                     - get
                     - update
                     - watch
-      name: cas-role
       patches:
         - patchSetName: k8s-config
           type: PatchSet
@@ -1109,7 +1132,9 @@ spec:
             status: "True"
             type: Ready
           type: MatchCondition
-    - base:
+
+    - name: cas-cluster-role-binding
+      base:
         apiVersion: kubernetes.crossplane.io/v1alpha1
         kind: Object
         spec:
@@ -1130,7 +1155,6 @@ spec:
                 - kind: ServiceAccount
                   name: cluster-autoscaler
                   namespace: kube-system
-      name: cas-cluster-role-binding
       patches:
         - patchSetName: k8s-config
           type: PatchSet
@@ -1149,7 +1173,9 @@ spec:
             status: "True"
             type: Ready
           type: MatchCondition
-    - base:
+
+    - name: cas-role-binding
+      base:
         apiVersion: kubernetes.crossplane.io/v1alpha1
         kind: Object
         spec:
@@ -1171,7 +1197,6 @@ spec:
                 - kind: ServiceAccount
                   name: cluster-autoscaler
                   namespace: kube-system
-      name: cas-role-binding
       patches:
         - patchSetName: k8s-config
           type: PatchSet
@@ -1190,7 +1215,9 @@ spec:
             status: "True"
             type: Ready
           type: MatchCondition
-    - base:
+
+    - name: cas-deployment
+      base:
         apiVersion: kubernetes.crossplane.io/v1alpha1
         kind: Object
         metadata:
@@ -1263,7 +1290,6 @@ spec:
                       - hostPath:
                           path: /etc/ssl/certs/ca-bundle.crt
                         name: ssl-certs
-      name: cas-deployment
       patches:
         - patchSetName: k8s-config
           type: PatchSet
