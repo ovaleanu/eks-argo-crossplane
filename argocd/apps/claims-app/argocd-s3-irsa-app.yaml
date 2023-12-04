@@ -18,7 +18,4 @@ spec:
       values: |-
         s3irsa:
           enabled: true
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: false
+  syncPolicy: {}
