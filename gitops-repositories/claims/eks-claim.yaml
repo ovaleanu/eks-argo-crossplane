@@ -35,9 +35,9 @@ spec:
     endpointPrivateAccess: false
     endpointPublicAccess: true
     subnetIds: # Update your subnet ids
-      - "subnet-073781e2894f00df7"
-      - "subnet-0ce613a305c80338e"
-      - "subnet-03ea95dc7d20949cd"
+      - "subnet-02d759aeec4755213"
+      - "subnet-042cd9e0eefcd896f"
+      - "subnet-0ed072bc4676ff3cc"
   managedNodeGroups:
     minSize: 1
     desiredSize: 2
