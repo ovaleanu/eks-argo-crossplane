@@ -1,0 +1,1336 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: xamazonekss-subnet-labels.cluster.ovsandbox.com
+  labels:
+    crossplane.io/xrd: xamazonekss.cluster.ovsandbox.com
+    ovsandbox.com/environment: dev
+    ovsandbox.com/provider: aws
+    ovsandbox.com/subnet-selection: label
+    service: eks
+spec:
+  compositeTypeRef:
+    apiVersion: cluster.ovsandbox.com/v1alpha1
+    kind: XAmazonEks
+  patchSets:
+    - name: common-parameters
+      patches:
+        - fromFieldPath: spec.resourceConfig.providerConfigName
+          toFieldPath: spec.providerConfigRef.name
+          type: FromCompositeFieldPath
+        - fromFieldPath: spec.resourceConfig.deletionPolicy
+          toFieldPath: spec.deletionPolicy
+          type: FromCompositeFieldPath
+        - fromFieldPath: spec.resourceConfig.region
+          toFieldPath: spec.forProvider.region
+          type: FromCompositeFieldPath
+    - name: k8s-config
+      patches:
+        - fromFieldPath: "metadata.labels[crossplane.io/claim-name]"
+          policy:
+            fromFieldPath: Required
+          toFieldPath: spec.providerConfigRef.name
+        - fromFieldPath: spec.resourceConfig.deletionPolicy
+          toFieldPath: spec.deletionPolicy
+          type: FromCompositeFieldPath
+  resources:
+    - name: eks-cluster
+      base:
+        apiVersion: eks.aws.crossplane.io/v1beta1
+        kind: Cluster
+        metadata:
+          labels:
+            role: controlplane
+        spec:
+          forProvider:
+            resourcesVpcConfig:
+              endpointPrivateAccess:
+              endpointPublicAccess:
+              securityGroupIdSelector:
+                matchControllerRef: false
+                matchLabels:
+                  type: xcluster-security-group
+              subnetIdSelector:
+                matchLabels:
+                  network.ovsandbox.com/network-id:
+            roleArnSelector:
+              matchControllerRef: true
+              matchLabels:
+                role: controlplane
+            version:
+          writeConnectionSecretToRef:
+            namespace: crossplane-system
+      connectionDetails:
+        - fromConnectionSecretKey: clusterCA
+          name: cluster-ca
+        - fromConnectionSecretKey: endpoint
+          name: apiserver-endpoint
+        - fromConnectionSecretKey: kubeconfig
+          name: kubeconfig
+      patches:
+        - patchSetName: common-parameters
+          type: PatchSet
+        - fromFieldPath: "metadata.annotations[crossplane.io/external-name]"
+          toFieldPath: "metadata.annotations[crossplane.io/external-name]"
+          type: FromCompositeFieldPath
+        - fromFieldPath: spec.parameters.version
+          toFieldPath: spec.forProvider.version
+          type: FromCompositeFieldPath
+        - fromFieldPath: spec.parameters.networkId
+          toFieldPath: spec.forProvider.resourcesVpcConfig.subnetIdSelector.matchLabels[network.awsblueprints.io/network-id]
+          type: FromCompositeFieldPath
+        - fromFieldPath: spec.parameters.endpointPrivateAccess
+          toFieldPath: spec.forProvider.resourcesVpcConfig.endpointPrivateAccess
+          type: FromCompositeFieldPath
+        - fromFieldPath: spec.parameters.endpointPublicAccess
+          toFieldPath: spec.forProvider.resourcesVpcConfig.endpointPublicAccess
+          type: FromCompositeFieldPath
+        - fromFieldPath: metadata.uid
+          toFieldPath: spec.writeConnectionSecretToRef.name
+          transforms:
+            - string:
+                fmt: "%s-eks-cluster-conn"
+                type: Format
+              type: string
+          type: FromCompositeFieldPath
+        - fromFieldPath: metadata.name
+          toFieldPath: status.clusterName
+          type: ToCompositeFieldPath
+        - fromFieldPath: spec.writeConnectionSecretToRef.namespace
+          toFieldPath: spec.writeConnectionSecretToRef.namespace
+          type: FromCompositeFieldPath
+        - fromFieldPath: status.atProvider.identity.oidc.issuer
+          toFieldPath: status.oidcIssuerUrl
+          type: ToCompositeFieldPath
+        - fromFieldPath: status.atProvider.identity.oidc.issuer
+          toFieldPath: status.oidcEKS
+          transforms:
+            - string:
+                trim: "https://"
+                type: TrimPrefix
+              type: string
+          type: ToCompositeFieldPath
+        - fromFieldPath: "metadata.labels[crossplane.io/claim-name]"
+          toFieldPath: metadata.name
+          type: FromCompositeFieldPath
+      readinessChecks:
+        - matchCondition:
+            status: "True"
+            type: Ready
+          type: MatchCondition
+
+    - name: eks-cluster-role
+      base:
+        apiVersion: iam.aws.crossplane.io/v1beta1
+        kind: Role
+        metadata:
+          labels:
+            role: controlplane
+        spec:
+          forProvider:
+            assumeRolePolicyDocument: |
+              {
+                "Version": "2012-10-17",
+                "Statement": [
+                    {
+                        "Effect": "Allow",
+                        "Principal": {
+                            "Service": [
+                                "eks.amazonaws.com"
+                            ]
+                        },
+                        "Action": [
+                            "sts:AssumeRole"
+                        ]
+                    }
+                ]
+              }
+      patches:
+        - patchSetName: common-parameters
+          type: PatchSet
+        - fromFieldPath: "metadata.labels[crossplane.io/claim-name]"
+          toFieldPath: metadata.name
+          transforms:
+            - string:
+                fmt: control-plane-%s
+                type: Format
+              type: string
+          type: FromCompositeFieldPath
+      readinessChecks:
+        - matchCondition:
+            status: "True"
+            type: Ready
+          type: MatchCondition
+
+    - name: eks-cluster-policy
+      base:
+        apiVersion: iam.aws.crossplane.io/v1beta1
+        kind: RolePolicyAttachment
+        spec:
+          forProvider:
+            policyArn: "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
+            roleNameSelector:
+              matchControllerRef: true
+              matchLabels:
+                role: controlplane
+      patches:
+        - patchSetName: common-parameters
+          type: PatchSet
+        - fromFieldPath: "metadata.labels[crossplane.io/claim-name]"
+          toFieldPath: metadata.name
+          transforms:
+            - string:
+                fmt: eks-cluster-policy-%s
+                type: Format
+              type: string
+          type: FromCompositeFieldPath
+      readinessChecks:
+        - matchCondition:
+            status: "True"
+            type: Ready
+          type: MatchCondition
+
+    - name: eks-service-policy
+      base:
+        apiVersion: iam.aws.crossplane.io/v1beta1
+        kind: RolePolicyAttachment
+        spec:
+          forProvider:
+            policyArn: "arn:aws:iam::aws:policy/AmazonEKSServicePolicy"
+            roleNameSelector:
+              matchControllerRef: true
+              matchLabels:
+                role: controlplane
+      patches:
+        - patchSetName: common-parameters
+          type: PatchSet
+        - fromFieldPath: "metadata.labels[crossplane.io/claim-name]"
+          toFieldPath: metadata.name
+          transforms:
+            - string:
+                fmt: eks-service-policy-%s
+                type: Format
+              type: string
+          type: FromCompositeFieldPath
+      readinessChecks:
+        - matchCondition:
+            status: "True"
+            type: Ready
+          type: MatchCondition
+
+    - name: eks-vpcresource-controller-policy
+      base:
+        apiVersion: iam.aws.crossplane.io/v1beta1
+        kind: RolePolicyAttachment
+        spec:
+          forProvider:
+            policyArn: "arn:aws:iam::aws:policy/AmazonEKSVPCResourceController"
+            roleNameSelector:
+              matchControllerRef: true
+              matchLabels:
+                role: controlplane
+      patches:
+        - patchSetName: common-parameters
+          type: PatchSet
+        - fromFieldPath: "metadata.labels[crossplane.io/claim-name]"
+          toFieldPath: metadata.name
+          transforms:
+            - string:
+                fmt: eks-vpc-policy-%s
+                type: Format
+              type: string
+          type: FromCompositeFieldPath
+      readinessChecks:
+        - matchCondition:
+            status: "True"
+            type: Ready
+          type: MatchCondition
+
+    - name: eks-oidc
+      base:
+        apiVersion: iam.aws.crossplane.io/v1beta1
+        kind: OpenIDConnectProvider
+        spec:
+          forProvider:
+            clientIDList:
+              - sts.amazonaws.com
+            thumbprintList:
+              - 9e99a48a9960b14926bb7f3b02e22da2b0ab7280
+      patches:
+        - patchSetName: common-parameters
+          type: PatchSet
+        - fromFieldPath: status.oidcIssuerUrl
+          policy:
+            fromFieldPath: Required
+          toFieldPath: spec.forProvider.url
+          type: FromCompositeFieldPath
+        - fromFieldPath: "metadata.labels[crossplane.io/claim-name]"
+          toFieldPath: metadata.name
+          transforms:
+            - string:
+                fmt: oidc-provider-%s
+                type: Format
+              type: string
+          type: FromCompositeFieldPath
+      readinessChecks:
+        - matchCondition:
+            status: "True"
+            type: Ready
+          type: MatchCondition
+
+    - name: eks-managed-nodegroups
+      base:
+        apiVersion: eks.aws.crossplane.io/v1alpha1
+        kind: NodeGroup
+        spec:
+          forProvider:
+            amiType:
+            capacityType:
+            clusterNameSelector:
+              matchControllerRef: true
+              matchLabels:
+                role: controlplane
+            instanceTypes:
+              - m5.large
+              - m5.xlarge
+              - m5.2xlarge
+              - m5.4xlarge
+            nodeRoleSelector:
+              matchControllerRef: true
+              matchLabels:
+                role: managed-nodegroup
+            subnetSelector:
+              matchLabels:
+                network.awsblueprints.io/network-id:
+                visibility: private
+            scalingConfig:
+              desiredSize:
+              maxSize:
+              minSize:
+      patches:
+        - patchSetName: common-parameters
+          type: PatchSet
+        - fromFieldPath: "metadata.annotations[crossplane.io/external-name]"
+          toFieldPath: "metadata.annotations[crossplane.io/external-name]"
+          type: FromCompositeFieldPath
+        - fromFieldPath: spec.managedNodeGroups.minSize
+          toFieldPath: spec.forProvider.scalingConfig.minSize
+          type: FromCompositeFieldPath
+        - fromFieldPath: spec.managedNodeGroups.maxSize
+          toFieldPath: spec.forProvider.scalingConfig.maxSize
+          type: FromCompositeFieldPath
+        - fromFieldPath: spec.managedNodeGroups.desiredSize
+          toFieldPath: spec.forProvider.scalingConfig.desiredSize
+          type: FromCompositeFieldPath
+        - fromFieldPath: spec.managedNodeGroups.capacityType
+          toFieldPath: spec.forProvider.capacityType
+          type: FromCompositeFieldPath
+        - fromFieldPath: spec.managedNodeGroups.instanceTypes
+          toFieldPath: spec.forProvider.instanceTypes
+          type: FromCompositeFieldPath
+        - fromFieldPath: spec.managedNodeGroups.amiType
+          toFieldPath: spec.forProvider.amiType
+          type: FromCompositeFieldPath
+        - fromFieldPath: spec.parameters.networkId
+          toFieldPath: spec.forProvider.subnetSelector.matchLabels[network.awsblueprints.io/network-id]
+          type: FromCompositeFieldPath
+      readinessChecks:
+        - matchCondition:
+            status: "True"
+            type: Ready
+          type: MatchCondition
+
+    - name: eks-managed-nodegroup-iam-role
+      base:
+        apiVersion: iam.aws.crossplane.io/v1beta1
+        kind: Role
+        metadata:
+          labels:
+            role: managed-nodegroup
+        spec:
+          forProvider:
+            assumeRolePolicyDocument: |
+              {
+                "Version": "2012-10-17",
+                "Statement": [
+                    {
+                        "Effect": "Allow",
+                        "Principal": {
+                            "Service": [
+                                "ec2.amazonaws.com"
+                            ]
+                        },
+                        "Action": [
+                            "sts:AssumeRole"
+                        ]
+                    }
+                ]
+              }
+      patches:
+        - patchSetName: common-parameters
+          type: PatchSet
+        - fromFieldPath: status.atProvider.arn
+          toFieldPath: status.accountID
+          transforms:
+            - string:
+                regexp:
+                  group: 1
+                  match: 'arn:aws:iam::(\d+):.*'
+                type: Regexp
+              type: string
+          type: ToCompositeFieldPath
+        - fromFieldPath: status.atProvider.arn
+          toFieldPath: status.nodeGroupArn
+          type: ToCompositeFieldPath
+        - fromFieldPath: "metadata.labels[crossplane.io/claim-name]"
+          toFieldPath: metadata.name
+          transforms:
+            - string:
+                fmt: managed-node-%s
+                type: Format
+              type: string
+          type: FromCompositeFieldPath
+      readinessChecks:
+        - matchCondition:
+            status: "True"
+            type: Ready
+          type: MatchCondition
+
+    - name: eks-managed-nodegroup-worker-node-policy
+      base:
+        apiVersion: iam.aws.crossplane.io/v1beta1
+        kind: RolePolicyAttachment
+        spec:
+          forProvider:
+            policyArn: "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
+            roleNameSelector:
+              matchControllerRef: true
+              matchLabels:
+                role: managed-nodegroup
+      patches:
+        - patchSetName: common-parameters
+          type: PatchSet
+        - fromFieldPath: "metadata.labels[crossplane.io/claim-name]"
+          toFieldPath: metadata.name
+          transforms:
+            - string:
+                fmt: eks-worker-ng-%s
+                type: Format
+              type: string
+          type: FromCompositeFieldPath
+      readinessChecks:
+        - matchCondition:
+            status: "True"
+            type: Ready
+          type: MatchCondition
+
+    - name: eks-managed-nodegroup-container-registry-policy
+      base:
+        apiVersion: iam.aws.crossplane.io/v1beta1
+        kind: RolePolicyAttachment
+        spec:
+          forProvider:
+            policyArn: "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
+            roleNameSelector:
+              matchControllerRef: true
+              matchLabels:
+                role: managed-nodegroup
+      patches:
+        - patchSetName: common-parameters
+          type: PatchSet
+        - fromFieldPath: "metadata.labels[crossplane.io/claim-name]"
+          toFieldPath: metadata.name
+          transforms:
+            - string:
+                fmt: eks-worker-ecr-%s
+                type: Format
+              type: string
+          type: FromCompositeFieldPath
+      readinessChecks:
+        - matchCondition:
+            status: "True"
+            type: Ready
+          type: MatchCondition
+
+    - name: eks-managed-nodegroup-ssm-policy
+      base:
+        apiVersion: iam.aws.crossplane.io/v1beta1
+        kind: RolePolicyAttachment
+        spec:
+          forProvider:
+            policyArn: "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+            roleNameSelector:
+              matchControllerRef: true
+              matchLabels:
+                role: managed-nodegroup
+      patches:
+        - patchSetName: common-parameters
+          type: PatchSet
+        - fromFieldPath: "metadata.labels[crossplane.io/claim-name]"
+          toFieldPath: metadata.name
+          transforms:
+            - string:
+                fmt: eks-worker-ssm-%s
+                type: Format
+              type: string
+          type: FromCompositeFieldPath
+      readinessChecks:
+        - matchCondition:
+            status: "True"
+            type: Ready
+          type: MatchCondition
+
+    - name: eks-managed-nodegroup-cni-policy
+      base:
+        apiVersion: iam.aws.crossplane.io/v1beta1
+        kind: RolePolicyAttachment
+        spec:
+          forProvider:
+            policyArn: "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
+            roleNameSelector:
+              matchControllerRef: true
+              matchLabels:
+                role: managed-nodegroup
+      patches:
+        - patchSetName: common-parameters
+          type: PatchSet
+        - fromFieldPath: "metadata.labels[crossplane.io/claim-name]"
+          toFieldPath: metadata.name
+          transforms:
+            - string:
+                fmt: eks-worker-cni-%s
+                type: Format
+              type: string
+          type: FromCompositeFieldPath
+      readinessChecks:
+        - matchCondition:
+            status: "True"
+            type: Ready
+          type: MatchCondition
+
+    - name: csi-role
+      base:
+        apiVersion: iam.aws.crossplane.io/v1beta1
+        kind: Role
+        metadata:
+          labels:
+            role: csi-role
+        spec:
+          forProvider:
+            name: ""
+      patches:
+        - patchSetName: common-parameters
+          type: PatchSet
+        - fromFieldPath: status.atProvider.arn
+          toFieldPath: status.roleArnCSI
+          type: ToCompositeFieldPath
+        - combine:
+            strategy: string
+            string:
+              fmt: |
+                {
+                   "Version": "2012-10-17",
+                   "Statement": [{
+                   "Effect": "Allow",
+                   "Principal": {
+                     "Federated": "arn:aws:iam::%s:oidc-provider/%s"
+                   },
+                 "Action": "sts:AssumeRoleWithWebIdentity",
+                 "Condition": {
+                   "StringEquals": {
+                   "%s:aud": "sts.amazonaws.com",
+                   "%s:sub": "system:serviceaccount:kube-system:ebs-csi-controller-sa"
+                                   }
+                               }
+                     }]
+                }
+            variables:
+              - fromFieldPath: status.accountID
+              - fromFieldPath: status.oidcEKS
+              - fromFieldPath: status.oidcEKS
+              - fromFieldPath: status.oidcEKS
+          policy:
+            fromFieldPath: Required
+          toFieldPath: spec.forProvider.assumeRolePolicyDocument
+          type: CombineFromComposite
+        - combine:
+            strategy: string
+            string:
+              fmt: csi-%s
+            variables:
+              - fromFieldPath: "metadata.labels[crossplane.io/claim-name]"
+          toFieldPath: spec.forProvider.name
+          type: CombineFromComposite
+      readinessChecks:
+        - matchCondition:
+            status: "True"
+            type: Ready
+          type: MatchCondition
+
+    - name: csi-policy-attachment
+      base:
+        apiVersion: iam.aws.crossplane.io/v1beta1
+        kind: RolePolicyAttachment
+        spec:
+          forProvider:
+            policyArn: "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"
+            roleNameSelector:
+              matchControllerRef: true
+              matchLabels:
+                role: csi-role
+      patches:
+        - patchSetName: common-parameters
+          type: PatchSet
+        - fromFieldPath: "metadata.labels[crossplane.io/claim-name]"
+          toFieldPath: metadata.name
+          transforms:
+            - string:
+                fmt: eks-worker-csi-%s
+                type: Format
+              type: string
+          type: FromCompositeFieldPath
+      readinessChecks:
+        - matchCondition:
+            status: "True"
+            type: Ready
+          type: MatchCondition
+
+    - name: eks-csi-driver
+      base:
+        apiVersion: eks.aws.crossplane.io/v1alpha1
+        kind: Addon
+        metadata: {}
+        spec:
+          forProvider:
+            addonName: aws-ebs-csi-driver
+            addonVersion: v1.25.0-eksbuild.1
+            clusterNameSelector:
+              matchControllerRef: true
+              matchLabels:
+                role: controlplane
+            resolveConflicts: OVERWRITE
+      patches:
+        - patchSetName: common-parameters
+          type: PatchSet
+        - fromFieldPath: "metadata.labels[crossplane.io/claim-name]"
+          toFieldPath: metadata.name
+          transforms:
+            - string:
+                fmt: eks-worker-csi-%s
+                type: Format
+              type: string
+          type: FromCompositeFieldPath
+        - fromFieldPath: status.roleArnCSI
+          policy:
+            fromFieldPath: Required
+          toFieldPath: spec.forProvider.serviceAccountRoleARN
+          type: FromCompositeFieldPath
+      readinessChecks:
+        - matchCondition:
+            status: "True"
+            type: Ready
+          type: MatchCondition
+
+    - name: eks-k8s-provider-config
+      base:
+        apiVersion: kubernetes.crossplane.io/v1alpha1
+        kind: ProviderConfig
+        metadata:
+          name: k8s-project-name
+        spec:
+          credentials:
+            secretRef:
+              key: kubeconfig
+              name: ""
+              namespace: crossplane-system
+            source: Secret
+      patches:
+        - fromFieldPath: metadata.uid
+          policy:
+            fromFieldPath: Required
+          toFieldPath: spec.credentials.secretRef.name
+          transforms:
+            - string:
+                fmt: "%s-eks-cluster-conn"
+                type: Format
+              type: string
+          type: FromCompositeFieldPath
+        - fromFieldPath: "metadata.labels[crossplane.io/claim-name]"
+          policy:
+            fromFieldPath: Required
+          toFieldPath: metadata.name
+          type: FromCompositeFieldPath
+      readinessChecks:
+        - matchCondition:
+            status: "True"
+            type: Ready
+          type: MatchCondition
+
+    - name: eks-helm-provider-config
+      base:
+        apiVersion: helm.crossplane.io/v1beta1
+        kind: ProviderConfig
+        metadata:
+          name: helm-project-name
+        spec:
+          credentials:
+            secretRef:
+              key: kubeconfig
+              name: ""
+              namespace: crossplane-system
+            source: Secret
+      patches:
+        - fromFieldPath: metadata.uid
+          toFieldPath: spec.credentials.secretRef.name
+          transforms:
+            - string:
+                fmt: "%s-eks-cluster-conn"
+                type: Format
+              type: string
+          type: FromCompositeFieldPath
+        - fromFieldPath: "metadata.labels[crossplane.io/claim-name]"
+          policy:
+            fromFieldPath: Required
+          toFieldPath: metadata.name
+          type: FromCompositeFieldPath
+      readinessChecks:
+        - matchCondition:
+            status: "True"
+            type: Ready
+          type: MatchCondition
+
+    - name: aws-auth-configmap
+      base:
+        apiVersion: kubernetes.crossplane.io/v1alpha1
+        kind: Object
+        spec:
+          deletionPolicy: Orphan
+          forProvider:
+            manifest:
+              apiVersion: v1
+              kind: ConfigMap
+              metadata:
+                name: aws-auth
+                namespace: kube-system
+          managementPolicy: ObserveCreateUpdate
+          providerConfigRef:
+            name: invalid
+      patches:
+        - fromFieldPath: "metadata.labels[crossplane.io/claim-name]"
+          policy:
+            fromFieldPath: Required
+          toFieldPath: metadata.name
+          transforms:
+            - string:
+                fmt: eks-aws-auth-%s
+                type: Format
+              type: string
+          type: FromCompositeFieldPath
+        - fromFieldPath: "metadata.labels[crossplane.io/claim-name]"
+          policy:
+            fromFieldPath: Required
+          toFieldPath: spec.providerConfigRef.name
+          type: FromCompositeFieldPath
+        - combine:
+            strategy: string
+            string:
+              fmt: |
+                - groups:
+                  - system:bootstrappers
+                  - system:nodes
+                  rolearn: %s
+                  username: system:node:{{EC2PrivateDNSName}}
+                - groups:
+                  - system:masters
+                  rolearn: arn:aws:iam::%s:role/%s
+                  username: admin
+            variables:
+              - fromFieldPath: status.nodeGroupArn
+              - fromFieldPath: status.accountID
+              - fromFieldPath: spec.parameters.adminRole
+          toFieldPath: spec.forProvider.manifest.data.mapRoles
+          type: CombineFromComposite
+      readinessChecks:
+        - matchCondition:
+            status: "True"
+            type: Ready
+          type: MatchCondition
+
+    - name: cas-policy
+      base:
+        apiVersion: iam.aws.crossplane.io/v1beta1
+        kind: Policy
+        metadata:
+          labels:
+            role: cas
+        spec:
+          forProvider:
+            name: ""
+      patches:
+        - patchSetName: common-parameters
+          type: PatchSet
+        - combine:
+            strategy: string
+            string:
+              fmt: |
+                {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Action": [
+                                "autoscaling:SetDesiredCapacity",
+                                "autoscaling:TerminateInstanceInAutoScalingGroup"
+                            ],
+                            "Resource": "*",
+                            "Condition": {
+                                "StringEquals": {
+                                    "aws:ResourceTag/k8s.io/cluster-autoscaler/%s": "owned"
+                                }
+                            }
+                        },
+                        {
+                            "Effect": "Allow",
+                            "Action": [
+                                "autoscaling:DescribeAutoScalingInstances",
+                                "autoscaling:DescribeAutoScalingGroups",
+                                "ec2:DescribeLaunchTemplateVersions",
+                                "autoscaling:DescribeTags",
+                                "autoscaling:DescribeLaunchConfigurations",
+                                "ec2:DescribeInstanceTypes"
+                            ],
+                            "Resource": "*"
+                        }
+                    ]
+                }
+            variables:
+              - fromFieldPath: status.clusterName
+          policy:
+            fromFieldPath: Required
+          toFieldPath: spec.forProvider.document
+          type: CombineFromComposite
+        - combine:
+            strategy: string
+            string:
+              fmt: cluster-as-%s
+            variables:
+              - fromFieldPath: "metadata.labels[crossplane.io/claim-name]"
+          toFieldPath: spec.forProvider.name
+          type: CombineFromComposite
+      readinessChecks:
+        - matchCondition:
+            status: "True"
+            type: Ready
+          type: MatchCondition
+
+    - name: cas-cluster-as-role
+      base:
+        apiVersion: iam.aws.crossplane.io/v1beta1
+        kind: Role
+        metadata:
+          labels:
+            role: cas-role
+        spec:
+          forProvider:
+            name: ""
+      patches:
+        - patchSetName: common-parameters
+          type: PatchSet
+        - fromFieldPath: status.atProvider.arn
+          toFieldPath: status.roleArnCAS
+          type: ToCompositeFieldPath
+        - combine:
+            strategy: string
+            string:
+              fmt: |
+                {
+                   "Version": "2012-10-17",
+                   "Statement": [{
+                   "Effect": "Allow",
+                   "Principal": {
+                     "Federated": "arn:aws:iam::%s:oidc-provider/%s"
+                   },
+                 "Action": "sts:AssumeRoleWithWebIdentity",
+                 "Condition": {
+                   "StringEquals": {
+                   "%s:aud": "sts.amazonaws.com",
+                   "%s:sub": "system:serviceaccount:kube-system:cluster-autoscaler"
+                                   }
+                               }
+                     }]
+                }
+            variables:
+              - fromFieldPath: status.accountID
+              - fromFieldPath: status.oidcEKS
+              - fromFieldPath: status.oidcEKS
+              - fromFieldPath: status.oidcEKS
+          policy:
+            fromFieldPath: Required
+          toFieldPath: spec.forProvider.assumeRolePolicyDocument
+          type: CombineFromComposite
+        - combine:
+            strategy: string
+            string:
+              fmt: CAS-%s
+            variables:
+              - fromFieldPath: "metadata.labels[crossplane.io/claim-name]"
+          toFieldPath: spec.forProvider.name
+          type: CombineFromComposite
+      readinessChecks:
+        - matchCondition:
+            status: "True"
+            type: Ready
+          type: MatchCondition
+
+    - name: cas-role-policy-attachment
+      base:
+        apiVersion: iam.aws.crossplane.io/v1beta1
+        kind: RolePolicyAttachment
+        spec:
+          forProvider:
+            policyArnSelector:
+              matchControllerRef: true
+              matchLabels:
+                role: cas
+            roleNameSelector:
+              matchControllerRef: true
+              matchLabels:
+                role: cas-role
+      patches:
+        - patchSetName: common-parameters
+          type: PatchSet
+      readinessChecks:
+        - matchCondition:
+            status: "True"
+            type: Ready
+          type: MatchCondition
+
+    - name: cas-sa
+      base:
+        apiVersion: kubernetes.crossplane.io/v1alpha1
+        kind: Object
+        spec:
+          forProvider:
+            manifest:
+              apiVersion: v1
+              kind: ServiceAccount
+              metadata:
+                labels:
+                  app.kubernetes.io/managed-by: crossplane
+                  k8s-addon: cluster-autoscaler.addons.k8s.io
+                  k8s-app: cluster-autoscaler
+                name: cluster-autoscaler
+                namespace: kube-system
+      patches:
+        - patchSetName: k8s-config
+          type: PatchSet
+        - fromFieldPath: status.roleArnCAS
+          policy:
+            fromFieldPath: Required
+          toFieldPath: >-
+            spec.forProvider.manifest.metadata.annotations[eks.amazonaws.com/role-arn]
+          type: FromCompositeFieldPath
+        - combine:
+            strategy: string
+            string:
+              fmt: cas-sa-%s
+            variables:
+              - fromFieldPath: "metadata.labels[crossplane.io/claim-name]"
+          policy:
+            fromFieldPath: Required
+          toFieldPath: metadata.name
+          type: CombineFromComposite
+      readinessChecks:
+        - matchCondition:
+            status: "True"
+            type: Ready
+          type: MatchCondition
+
+    - name: cas-cluster-role
+      base:
+        apiVersion: kubernetes.crossplane.io/v1alpha1
+        kind: Object
+        spec:
+          forProvider:
+            manifest:
+              apiVersion: rbac.authorization.k8s.io/v1
+              kind: ClusterRole
+              metadata:
+                labels:
+                  k8s-addon: cluster-autoscaler.addons.k8s.io
+                  k8s-app: cluster-autoscaler
+                name: cluster-autoscaler
+              rules:
+                - apiGroups:
+                    - ""
+                  resources:
+                    - events
+                    - endpoints
+                  verbs:
+                    - create
+                    - patch
+                - apiGroups:
+                    - ""
+                  resources:
+                    - pods/eviction
+                  verbs:
+                    - create
+                - apiGroups:
+                    - ""
+                  resources:
+                    - pods/status
+                  verbs:
+                    - update
+                - apiGroups:
+                    - ""
+                  resourceNames:
+                    - cluster-autoscaler
+                  resources:
+                    - endpoints
+                  verbs:
+                    - get
+                    - update
+                - apiGroups:
+                    - ""
+                  resources:
+                    - nodes
+                  verbs:
+                    - watch
+                    - list
+                    - get
+                    - update
+                - apiGroups:
+                    - ""
+                  resources:
+                    - namespaces
+                    - pods
+                    - services
+                    - replicationcontrollers
+                    - persistentvolumeclaims
+                    - persistentvolumes
+                  verbs:
+                    - watch
+                    - list
+                    - get
+                - apiGroups:
+                    - extensions
+                  resources:
+                    - replicasets
+                    - daemonsets
+                  verbs:
+                    - watch
+                    - list
+                    - get
+                - apiGroups:
+                    - policy
+                  resources:
+                    - poddisruptionbudgets
+                  verbs:
+                    - watch
+                    - list
+                - apiGroups:
+                    - apps
+                  resources:
+                    - statefulsets
+                    - replicasets
+                    - daemonsets
+                  verbs:
+                    - watch
+                    - list
+                    - get
+                - apiGroups:
+                    - storage.k8s.io
+                  resources:
+                    - storageclasses
+                    - csinodes
+                    - csidrivers
+                    - csistoragecapacities
+                  verbs:
+                    - watch
+                    - list
+                    - get
+                - apiGroups:
+                    - batch
+                    - extensions
+                  resources:
+                    - jobs
+                  verbs:
+                    - get
+                    - list
+                    - watch
+                    - patch
+                - apiGroups:
+                    - coordination.k8s.io
+                  resources:
+                    - leases
+                  verbs:
+                    - create
+                - apiGroups:
+                    - coordination.k8s.io
+                  resourceNames:
+                    - cluster-autoscaler
+                  resources:
+                    - leases
+                  verbs:
+                    - get
+                    - update
+      patches:
+        - patchSetName: k8s-config
+          type: PatchSet
+        - combine:
+            strategy: string
+            string:
+              fmt: cas-cluster-role-%s
+            variables:
+              - fromFieldPath: "metadata.labels[crossplane.io/claim-name]"
+          policy:
+            fromFieldPath: Required
+          toFieldPath: metadata.name
+          type: CombineFromComposite
+      readinessChecks:
+        - matchCondition:
+            status: "True"
+            type: Ready
+          type: MatchCondition
+
+    - name: cas-role
+      base:
+        apiVersion: kubernetes.crossplane.io/v1alpha1
+        kind: Object
+        spec:
+          forProvider:
+            manifest:
+              apiVersion: rbac.authorization.k8s.io/v1
+              kind: Role
+              metadata:
+                labels:
+                  k8s-addon: cluster-autoscaler.addons.k8s.io
+                  k8s-app: cluster-autoscaler
+                name: cluster-autoscaler
+                namespace: kube-system
+              rules:
+                - apiGroups:
+                    - ""
+                  resources:
+                    - configmaps
+                  verbs:
+                    - create
+                    - list
+                    - watch
+                - apiGroups:
+                    - ""
+                  resourceNames:
+                    - cluster-autoscaler-status
+                    - cluster-autoscaler-priority-expander
+                  resources:
+                    - configmaps
+                  verbs:
+                    - delete
+                    - get
+                    - update
+                    - watch
+      patches:
+        - patchSetName: k8s-config
+          type: PatchSet
+        - combine:
+            strategy: string
+            string:
+              fmt: cas-role-%s
+            variables:
+              - fromFieldPath: "metadata.labels[crossplane.io/claim-name]"
+          policy:
+            fromFieldPath: Required
+          toFieldPath: metadata.name
+          type: CombineFromComposite
+      readinessChecks:
+        - matchCondition:
+            status: "True"
+            type: Ready
+          type: MatchCondition
+
+    - name: cas-cluster-role-binding
+      base:
+        apiVersion: kubernetes.crossplane.io/v1alpha1
+        kind: Object
+        spec:
+          forProvider:
+            manifest:
+              apiVersion: rbac.authorization.k8s.io/v1
+              kind: ClusterRoleBinding
+              metadata:
+                labels:
+                  k8s-addon: cluster-autoscaler.addons.k8s.io
+                  k8s-app: cluster-autoscaler
+                name: cluster-autoscaler
+              roleRef:
+                apiGroup: rbac.authorization.k8s.io
+                kind: ClusterRole
+                name: cluster-autoscaler
+              subjects:
+                - kind: ServiceAccount
+                  name: cluster-autoscaler
+                  namespace: kube-system
+      patches:
+        - patchSetName: k8s-config
+          type: PatchSet
+        - combine:
+            strategy: string
+            string:
+              fmt: cas-cluster-role-binding-%s
+            variables:
+              - fromFieldPath: "metadata.labels[crossplane.io/claim-name]"
+          policy:
+            fromFieldPath: Required
+          toFieldPath: metadata.name
+          type: CombineFromComposite
+      readinessChecks:
+        - matchCondition:
+            status: "True"
+            type: Ready
+          type: MatchCondition
+
+    - name: cas-role-binding
+      base:
+        apiVersion: kubernetes.crossplane.io/v1alpha1
+        kind: Object
+        spec:
+          forProvider:
+            manifest:
+              apiVersion: rbac.authorization.k8s.io/v1
+              kind: RoleBinding
+              metadata:
+                labels:
+                  k8s-addon: cluster-autoscaler.addons.k8s.io
+                  k8s-app: cluster-autoscaler
+                name: cluster-autoscaler
+                namespace: kube-system
+              roleRef:
+                apiGroup: rbac.authorization.k8s.io
+                kind: Role
+                name: cluster-autoscaler
+              subjects:
+                - kind: ServiceAccount
+                  name: cluster-autoscaler
+                  namespace: kube-system
+      patches:
+        - patchSetName: k8s-config
+          type: PatchSet
+        - combine:
+            strategy: string
+            string:
+              fmt: cas-role-binding-%s
+            variables:
+              - fromFieldPath: "metadata.labels[crossplane.io/claim-name]"
+          policy:
+            fromFieldPath: Required
+          toFieldPath: metadata.name
+          type: CombineFromComposite
+      readinessChecks:
+        - matchCondition:
+            status: "True"
+            type: Ready
+          type: MatchCondition
+
+    - name: cas-deployment
+      base:
+        apiVersion: kubernetes.crossplane.io/v1alpha1
+        kind: Object
+        metadata:
+          name: cas-deployment
+        spec:
+          forProvider:
+            manifest:
+              apiVersion: apps/v1
+              kind: Deployment
+              metadata:
+                labels:
+                  app: cluster-autoscaler
+                name: cluster-autoscaler
+                namespace: kube-system
+              spec:
+                replicas: 1
+                selector:
+                  matchLabels:
+                    app: cluster-autoscaler
+                template:
+                  metadata:
+                    annotations:
+                      cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
+                      prometheus.io/port: "8085"
+                      prometheus.io/scrape: "true"
+                    labels:
+                      app: cluster-autoscaler
+                  spec:
+                    containers:
+                      - command:
+                          - ./cluster-autoscaler
+                          - "--v=4"
+                          - "--stderrthreshold=info"
+                          - "--cloud-provider=aws"
+                          - "--skip-nodes-with-local-storage=false"
+                          - "--expander=least-waste"
+                          - >-
+                            --node-group-auto-discovery=asg:tag=k8s.io/cluster-autoscaler/enabled,k8s.io/cluster-autoscaler/clustername
+                          - "--balance-similar-node-groups"
+                          - "--skip-nodes-with-system-pods=false"
+                        image: "registry.k8s.io/autoscaling/cluster-autoscaler:v1.24.1"
+                        imagePullPolicy: Always
+                        name: cluster-autoscaler
+                        resources:
+                          limits:
+                            cpu: 100m
+                            memory: 600Mi
+                          requests:
+                            cpu: 100m
+                            memory: 600Mi
+                        securityContext:
+                          allowPrivilegeEscalation: false
+                          capabilities:
+                            drop:
+                              - ALL
+                          readOnlyRootFilesystem: true
+                        volumeMounts:
+                          - mountPath: /etc/ssl/certs/ca-certificates.crt
+                            name: ssl-certs
+                            readOnly: true
+                    priorityClassName: system-cluster-critical
+                    securityContext:
+                      fsGroup: 65534
+                      runAsNonRoot: true
+                      runAsUser: 65534
+                      seccompProfile:
+                        type: RuntimeDefault
+                    serviceAccountName: cluster-autoscaler
+                    volumes:
+                      - hostPath:
+                          path: /etc/ssl/certs/ca-bundle.crt
+                        name: ssl-certs
+      patches:
+        - patchSetName: k8s-config
+          type: PatchSet
+        - combine:
+            strategy: string
+            string:
+              fmt: cas-deployment-%s
+            variables:
+              - fromFieldPath: "metadata.labels[crossplane.io/claim-name]"
+          policy:
+            fromFieldPath: Required
+          toFieldPath: metadata.name
+          type: CombineFromComposite
+        - fromFieldPath: status.clusterName
+          toFieldPath: >-
+            spec.forProvider.manifest.spec.template.spec.containers[0].command[6]
+          transforms:
+            - string:
+                fmt: >-
+                  --node-group-auto-discovery=asg:tag=k8s.io/cluster-autoscaler/enabled,k8s.io/cluster-autoscaler/%s
+                type: Format
+              type: string
+          type: FromCompositeFieldPath
+      readinessChecks:
+        - matchCondition:
+            status: "True"
+            type: Ready
+          type: MatchCondition
+  writeConnectionSecretsToNamespace: crossplane-system
