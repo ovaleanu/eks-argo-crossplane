@@ -3,9 +3,6 @@ This example deploys the archtecture depicted on the diagram. First, it applies 
 
 ![S3 IRSA App Diagram](../../diagrams/s3-irsa-app.png)
 
-## Pre-requisites
- - [Upbound AWS Provider Crossplane Blueprint Examples](../../README.md)
-
 
 ### Deploy XRDs and Compositions
 ```shell
