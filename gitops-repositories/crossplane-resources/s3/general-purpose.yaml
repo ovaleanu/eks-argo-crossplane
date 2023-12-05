@@ -60,15 +60,10 @@ spec:
           fromFieldPath: status.atProvider.id
           toFieldPath: status.bucketArn
           transforms:
-            - string:
+            - type: string
+              string:
                 fmt: "arn:aws:s3:::%s"
                 type: Format
-              type: string
-      readinessChecks:
-        - matchCondition:
-            status: "True"
-            type: Ready
-          type: MatchCondition
 
     - name: s3-blockpublicacces
       base:
