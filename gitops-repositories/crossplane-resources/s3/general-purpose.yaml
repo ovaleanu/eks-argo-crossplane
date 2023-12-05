@@ -64,6 +64,11 @@ spec:
               string:
                 fmt: "arn:aws:s3:::%s"
                 type: Format
+      readinessChecks:
+        - matchCondition:
+            status: "True"
+            type: Ready
+          type: MatchCondition
 
     - name: s3-blockpublicacces
       base:
